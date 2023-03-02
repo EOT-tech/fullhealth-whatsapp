@@ -1,8 +1,20 @@
 const { Client, Location, List, Buttons, LocalAuth} = require('./index');
 
+const USER_DIR_PATH = process.platform === "darwin"? './user_data' : '/opt/app/efs/user_data';
+const EXECUTABLE_PATH = process.platform === "darwin"?
+    '/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome' :
+    '/usr/bin/chromium-browser';
+
 const client = new Client({
-    authStrategy: new LocalAuth(),
-    puppeteer: { headless: false }
+    authStrategy: new LocalAuth({dataPath:USER_DIR_PATH}),
+    puppeteer: {
+        executablePath: EXECUTABLE_PATH,
+        headless: false, 
+        args:[
+            '--no-sandbox',
+            '--disable-gpu',
+            '--disable-dev-shm-usage',
+        ] }
 });
 
 client.initialize();
