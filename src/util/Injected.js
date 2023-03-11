@@ -116,7 +116,7 @@ exports.LoadUtils = () => {
                     forceDocument: options.sendMediaAsDocument,
                     forceGif: options.sendVideoAsGif
                 });
-            attOptions.caption = options.caption; // Here
+            attOptions.caption = options.caption; // Changed
 
             content = options.sendMediaAsSticker ? undefined : attOptions.preview;
 
