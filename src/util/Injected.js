@@ -271,7 +271,7 @@ exports.LoadUtils = () => {
             type: 'chat',
             ...ephemeralFields,
             ...locationOptions,
-            ...attOptions,
+            ...(attOptions.toJSON ? attOptions.toJSON() : {}),
             ...quotedMsgOptions,
             ...vcardOptions,
             ...buttonOptions,
