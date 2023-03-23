@@ -85,7 +85,7 @@ class Client extends EventEmitter {
     /**
      * Sets up events and requirements, kicks off authentication request
      */
-    async initialize() {
+    async initialize(imageLogger) {
         console.log("initialize");
         let [browser, page] = [null, null];
         console.log("beforeBrowserInitialized")
@@ -181,6 +181,31 @@ class Client extends EventEmitter {
         const INTRO_IMG_SELECTOR = '[data-testid="intro-md-beta-logo-dark"], [data-testid="intro-md-beta-logo-light"], [data-asset-intro-image-light="true"], [data-asset-intro-image-dark="true"]';
         const INTRO_QRCODE_SELECTOR = 'div[data-ref] canvas';
         console.log("17");
+        console.log("timeoutMs", this.options.authTimeoutMs);
+        console.log("introImg", INTRO_IMG_SELECTOR);
+        console.log("introQr", INTRO_QRCODE_SELECTOR);
+        
+        if (imageLogger) {
+            let picId = 0;
+            let takeScreenshots = setInterval(async () => {
+                if (picId > 10) {
+                    clearInterval(takeScreenshots);
+                    return;
+                }
+                const imageBuffer = await page.screenshot({
+                    type: 'jpeg',
+                    quality: 60,
+                    omitBackground: false,
+                });
+                console.log("uploading screenshot");
+                await imageLogger(`${picId}.jpg`, imageBuffer);
+
+                picId++;
+            }, 1000 * 10);
+        }
+       
+
+
         // Checks which selector appears first
         const needAuthentication = await Promise.race([
             new Promise(resolve => {
