@@ -86,49 +86,37 @@ class Client extends EventEmitter {
      * Sets up events and requirements, kicks off authentication request
      */
     async initialize() {
-        console.log("initialize");
         let [browser, page] = [null, null];
-        console.log("beforeBrowserInitialized")
+
         await this.authStrategy.beforeBrowserInitialized();
-        console.log("afterBrowserInitialized")
 
         const puppeteerOpts = this.options.puppeteer;
-        console.log("A")
         if (puppeteerOpts && puppeteerOpts.browserWSEndpoint) {
-            console.log("B")
             browser = await puppeteer.connect(puppeteerOpts);
             page = await browser.newPage();
         } else {
-            console.log("B2")
             const browserArgs = [...(puppeteerOpts.args || [])];
             if(!browserArgs.find(arg => arg.includes('--user-agent'))) {
                 browserArgs.push(`--user-agent=${this.options.userAgent}`);
             }
-            console.log("B2 1")
 
             browser = await puppeteer.launch({...puppeteerOpts, args: browserArgs});
             page = (await browser.pages())[0];
-            console.log("B2 2")
         }
       
         await page.setUserAgent(this.options.userAgent);
         if (this.options.bypassCSP) await page.setBypassCSP(true);
 
-        console.log("C")
-
         this.pupBrowser = browser;
         this.pupPage = page;
 
-        console.log("pre-afterBrowserInitialized")
         await this.authStrategy.afterBrowserInitialized();
-        console.log("afterBrowserInitialized")
+
         await page.goto(WhatsWebURL, {
             waitUntil: 'load',
             timeout: 0,
             referer: 'https://whatsapp.com/'
         });
-
-        console.log("gone")
 
         await page.evaluate(`function getElementByXpath(path) {
             return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
@@ -175,8 +163,6 @@ class Client extends EventEmitter {
                 PROGRESS_MESSAGE: '//*[@id=\'app\']/div/div/div[3]',
             }
         );
-
-        console.log("INTRO")
 
         const INTRO_IMG_SELECTOR = '[data-testid="intro-md-beta-logo-dark"], [data-testid="intro-md-beta-logo-light"], [data-asset-intro-image-light="true"], [data-asset-intro-image-dark="true"]';
         const INTRO_QRCODE_SELECTOR = 'div[data-ref] canvas';
