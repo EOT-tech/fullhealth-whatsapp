@@ -180,7 +180,7 @@ class Client extends EventEmitter {
 
         const INTRO_IMG_SELECTOR = '[data-testid="intro-md-beta-logo-dark"], [data-testid="intro-md-beta-logo-light"], [data-asset-intro-image-light="true"], [data-asset-intro-image-dark="true"]';
         const INTRO_QRCODE_SELECTOR = 'div[data-ref] canvas';
-
+        console.log("17");
         // Checks which selector appears first
         const needAuthentication = await Promise.race([
             new Promise(resolve => {
@@ -197,11 +197,13 @@ class Client extends EventEmitter {
 
         // Checks if an error occurred on the first found selector. The second will be discarded and ignored by .race;
         if (needAuthentication instanceof Error) throw needAuthentication;
-
+        console.log("16");
         // Scan-qrcode selector was found. Needs authentication
         if (needAuthentication) {
+            console.log("16.1");
             const { failed, failureEventPayload, restart } = await this.authStrategy.onAuthenticationNeeded();
             if(failed) {
+                console.log("16.1.1");
                 /**
                  * Emitted when there has been an error while trying to restore an existing session
                  * @event Client#auth_failure
@@ -215,10 +217,11 @@ class Client extends EventEmitter {
                 }
                 return;
             }
-
+            console.log("16.2");
             const QR_CONTAINER = 'div[data-ref]';
             const QR_RETRY_BUTTON = 'div[data-ref] > span > button';
             let qrRetries = 0;
+            console.log("16.3");
             await page.exposeFunction('qrChanged', async (qr) => {
                 /**
                 * Emitted when a QR code is received
@@ -234,10 +237,12 @@ class Client extends EventEmitter {
                     }
                 }
             });
-
+            console.log("16.4");
             await page.evaluate(function (selectors) {
                 const qr_container = document.querySelector(selectors.QR_CONTAINER);
                 window.qrChanged(qr_container.dataset.ref);
+
+                console.log("16.4.1");
 
                 const obs = new MutationObserver((muts) => {
                     muts.forEach(mut => {
@@ -252,6 +257,7 @@ class Client extends EventEmitter {
                         }
                     });
                 });
+                console.log("16.4.2");
                 obs.observe(qr_container.parentElement, {
                     subtree: true,
                     childList: true,
@@ -265,8 +271,10 @@ class Client extends EventEmitter {
 
             // Wait for code scan
             try {
+                console.log("16.4.3");
                 await page.waitForSelector(INTRO_IMG_SELECTOR, { timeout: 0 });
             } catch(error) {
+                console.log("16.4.3.1");
                 if (
                     error.name === 'ProtocolError' && 
                     error.message && 
@@ -280,10 +288,11 @@ class Client extends EventEmitter {
             }
 
         }
-
+        console.log("15");
+        
         await page.evaluate(ExposeStore, moduleRaid.toString());
         const authEventPayload = await this.authStrategy.getAuthEventPayload();
-
+        console.log("14");
         /**
          * Emitted when authentication is successful
          * @event Client#authenticated
@@ -292,7 +301,7 @@ class Client extends EventEmitter {
 
         // Check window.Store Injection
         await page.waitForFunction('window.Store != undefined');
-
+        console.log("13");
         await page.evaluate(async () => {
             // safely unregister service workers
             const registrations = await navigator.serviceWorker.getRegistrations();
@@ -300,9 +309,12 @@ class Client extends EventEmitter {
                 registration.unregister();
             }
         });
+        console.log("12");
 
         //Load util functions (serializers, helper functions)
         await page.evaluate(LoadUtils);
+
+        console.log("11");
 
         // Expose client info
         /**
@@ -315,7 +327,7 @@ class Client extends EventEmitter {
 
         // Add InterfaceController
         this.interface = new InterfaceController(this);
-
+        console.log("10");
         // Register events
         await page.exposeFunction('onAddMessageEvent', msg => {
             if (msg.type === 'gp2') {
@@ -365,6 +377,7 @@ class Client extends EventEmitter {
         });
 
         let last_message;
+        console.log("10");
 
         await page.exposeFunction('onChangeMessageTypeEvent', (msg) => {
 
@@ -386,7 +399,8 @@ class Client extends EventEmitter {
             }
 
         });
-
+        console.log("9");
+        
         await page.exposeFunction('onChangeMessageEvent', (msg) => {
 
             if (msg.type !== 'revoked') {
@@ -394,6 +408,8 @@ class Client extends EventEmitter {
             }
 
         });
+
+        console.log("8");
 
         await page.exposeFunction('onRemoveMessageEvent', (msg) => {
 
@@ -410,6 +426,8 @@ class Client extends EventEmitter {
 
         });
 
+        console.log("7");
+
         await page.exposeFunction('onMessageAckEvent', (msg, ack) => {
 
             const message = new Message(this, msg);
@@ -423,6 +441,7 @@ class Client extends EventEmitter {
             this.emit(Events.MESSAGE_ACK, message, ack);
 
         });
+        console.log("6");
 
         await page.exposeFunction('onMessageMediaUploadedEvent', (msg) => {
 
@@ -435,6 +454,7 @@ class Client extends EventEmitter {
              */
             this.emit(Events.MEDIA_UPLOADED, message);
         });
+        console.log("5");
 
         await page.exposeFunction('onAppStateChangedEvent', async (state) => {
 
@@ -468,6 +488,7 @@ class Client extends EventEmitter {
                 this.destroy();
             }
         });
+        console.log("4");
 
         await page.exposeFunction('onBatteryStateChangedEvent', (state) => {
             const { battery, plugged } = state;
@@ -484,6 +505,8 @@ class Client extends EventEmitter {
              */
             this.emit(Events.BATTERY_CHANGED, { battery, plugged });
         });
+
+        console.log("3");
 
         await page.exposeFunction('onIncomingCall', (call) => {
             /**
@@ -502,6 +525,7 @@ class Client extends EventEmitter {
             const cll = new Call(this, call);
             this.emit(Events.INCOMING_CALL, cll);
         });
+        console.log("2");
 
         await page.exposeFunction('onReaction', (reactions) => {
             for (const reaction of reactions) {
@@ -523,6 +547,8 @@ class Client extends EventEmitter {
                 this.emit(Events.MESSAGE_REACTION, new Reaction(this, reaction));
             }
         });
+        console.log("1");
+
 
         await page.evaluate(() => {
             window.Store.Msg.on('change', (msg) => { window.onChangeMessageEvent(window.WWebJS.getMessageModel(msg)); });
@@ -561,6 +587,8 @@ class Client extends EventEmitter {
             }
         });
 
+        console.log("ready");
+
         /**
          * Emitted when the client has initialized and is ready to receive messages.
          * @event Client#ready
@@ -577,6 +605,7 @@ class Client extends EventEmitter {
                 await this.destroy();
             }
         });
+        console.log("init complete");
     }
 
     /**
